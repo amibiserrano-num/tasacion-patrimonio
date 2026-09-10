@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ana Serrano — Numismatics & Heritage Advisor SL</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --brand:#295739;--brand-light:#E8F0EB;--brand-dark:#1A3A26;
+    --gold:#B8860B;--gold-light:#F5E6B2;--gold-dark:#7A5700;
+    --ink:#1C1C1C;--ink-mid:#4A4A4A;--ink-light:#888;
+    --surface:#FAFAF8;--surface-alt:#F4F6F4;--border:#C8D5CC;
+    --red:#A32D2D;--white:#FFFFFF;--radius:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Georgia',serif;background:var(--surface-alt);color:var(--ink);font-size:14px;line-height:1.6;}
+
+  /* HEADER */
+  header{background:var(--brand-dark);color:#fff;padding:0 1.5rem;display:flex;align-items:center;height:64px;border-bottom:2px solid var(--gold);}
+  header .brand{display:flex;flex-direction:column;justify-content:center;line-height:1.3;text-align:right;margin-left:auto;}
+  header .brand-name{font-family:'Baskerville Old Face','Georgia',serif;font-size:19px;font-weight:normal;color:#fff;letter-spacing:0.5px;}
+  header .brand-company{font-family:'Perpetua Titling MT','Georgia',serif;font-size:10px;color:var(--gold-light);letter-spacing:2px;text-transform:uppercase;}
+  header .brand-company strong{font-weight:700;color:var(--gold);}
+  header .brand-sep{width:1px;height:36px;background:rgba(255,255,255,0.18);margin:0 1.2rem;flex-shrink:0;}
+  header nav{display:flex;gap:4px;}
+  header nav button{background:transparent;border:none;color:rgba(255,255,255,0.75);padding:6px 14px;font-family:'Georgia',serif;font-size:13px;cursor:pointer;border-radius:var(--radius);transition:background 0.2s;}
+  header nav button:hover,header nav button.active{background:rgba(184,134,11,0.22);color:var(--gold-light);}
+
+  /* SYNC INDICATOR */
+  #sync-bar{display:flex;align-items:center;gap:8px;padding:6px 1.5rem;font-size:12px;font-family:Arial,sans-serif;border-bottom:1px solid var(--border);}
+  #sync-bar.ok{background:#EAF3DE;color:var(--brand);}
+  #sync-bar.error{background:#FCEBEB;color:var(--red);}
+  #sync-bar.loading{background:#FAEEDA;color:#854F0B;}
+  #sync-bar.offline{background:#F4F6F4;color:var(--ink-light);}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+  /* SETUP BANNER */
+  #setup-banner{background:var(--gold-light);border-bottom:2px solid var(--gold);padding:12px 1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  #setup-banner p{font-size:13px;color:var(--gold-dark);flex:1;min-width:200px;}
+  #setup-banner input{flex:2;min-width:250px;padding:7px 10px;border:1px solid var(--gold);border-radius:var(--radius);font-size:13px;font-family:'Georgia',serif;}
+  #setup-banner button{padding:7px 16px;background:var(--brand-dark);color:var(--gold-light);border:none;border-radius:var(--radius);cursor:pointer;font-size:13px;font-family:'Georgia',serif;white-space:nowrap;}
+  #setup-banner button:hover{background:var(--brand);}
+
+  /* LAYOUT */
+  .main{display:none;padding:1.5rem;max-width:1400px;margin:0 auto;}
+  .main.visible{display:block;}
+
+  /* BUTTONS */
+  .btn{padding:7px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);font-family:'Georgia',serif;font-size:13px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+  .btn:hover{background:var(--surface-alt);border-color:var(--gold);}
+  .btn-primary{background:var(--brand-dark);color:var(--gold-light);border-color:var(--brand-dark);}
+  .btn-primary:hover{background:var(--brand);border-color:var(--brand);}
+  .btn-informe{background:var(--brand-dark);color:var(--gold-light);border-color:var(--brand-dark);padding:8px 20px;font-size:13px;}
+  .btn-informe:hover{background:var(--brand);border-color:var(--brand);}
+  .btn-gold{background:var(--gold);color:var(--white);border-color:var(--gold-dark);}
+  .btn-gold:hover{background:var(--gold-dark);}
+  .btn-clone{background:#E8F0EB;color:var(--brand-dark);border-color:var(--brand);}
+  .btn-clone:hover{background:var(--brand-light);}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;}
+  .toolbar-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .toolbar-row input[type=text]{flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:13px;background:var(--white);}
+  .toolbar-row select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:13px;background:var(--white);}
+  .records-count{font-size:12px;color:var(--ink-light);white-space:nowrap;}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead tr{background:var(--brand-dark);color:var(--gold-light);}
+  thead th{padding:10px 12px;text-align:left;font-weight:normal;letter-spacing:0.5px;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:hover{background:var(--gold-light);}
+  tbody td{padding:9px 12px;vertical-align:middle;}
+  .td-actions{display:flex;gap:5px;}
+  .td-actions button{padding:3px 9px;font-size:12px;border-radius:4px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-family:inherit;}
+  .td-actions .btn-edit:hover{background:var(--surface-alt);border-color:var(--gold);}
+  .td-actions .btn-del{color:var(--red);}
+  .td-actions .btn-del:hover{background:#FCEBEB;border-color:var(--red);}
+  .td-actions .btn-pdf:hover{background:var(--gold-light);border-color:var(--gold);}
+  .td-actions .btn-clon{color:var(--brand);}
+  .td-actions .btn-clon:hover{background:var(--brand-light);border-color:var(--brand);}
+
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-family:Arial,sans-serif;}
+  .badge-good{background:#EAF3DE;color:var(--brand);}
+  .badge-regular{background:#FAEEDA;color:#854F0B;}
+  .badge-bad{background:#FCEBEB;color:var(--red);}
+  .badge-type{background:var(--gold-light);color:var(--gold-dark);}
+
+  /* STATS */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:1.5rem;}
+  .stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:3px solid var(--brand);}
+  .stat-card .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-light);font-family:Arial,sans-serif;}
+  .stat-card .stat-value{font-size:22px;font-weight:normal;color:var(--ink);margin-top:2px;}
+
+  .empty-state{text-align:center;padding:3rem;color:var(--ink-light);}
+  .empty-state h3{font-size:16px;font-weight:normal;margin-bottom:8px;}
+
+  /* FORM */
+  .form-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid var(--brand);}
+  .form-header h2{font-size:20px;font-weight:normal;}
+  .form-header .form-id{font-size:13px;color:var(--ink-light);margin-top:2px;}
+  .form-section{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.5rem;overflow:hidden;}
+  .form-section-title{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:8px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--brand);font-family:Arial,sans-serif;}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 20px;padding:16px;}
+  .form-group{display:flex;flex-direction:column;gap:4px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-group label{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-light);font-family:Arial,sans-serif;}
+  .form-group input,.form-group select,.form-group textarea{padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-family:'Georgia',serif;font-size:13px;background:var(--surface);color:var(--ink);transition:border-color 0.15s;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--gold);background:var(--white);}
+  .form-group textarea{resize:vertical;min-height:80px;}
+  .radio-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer;}
+  .radio-group input{margin:0;cursor:pointer;}
+  .form-actions{display:flex;justify-content:flex-end;gap:10px;padding:1rem 0;}
+
+  /* SAVING SPINNER */
+  .saving-overlay{display:none;position:fixed;inset:0;background:rgba(26,58,38,0.55);z-index:200;align-items:center;justify-content:center;}
+  .saving-overlay.show{display:flex;}
+  .saving-box{background:var(--white);border-radius:var(--radius);padding:2rem 2.5rem;text-align:center;border-top:3px solid var(--brand);}
+  .saving-box p{margin-top:10px;color:var(--ink-mid);font-size:14px;}
+  .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* MEDIA */
+  .media-actions{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+  .media-btn{padding:5px 12px;font-size:12px;font-family:Arial,sans-serif;border:1px solid var(--border);border-radius:4px;background:var(--white);cursor:pointer;transition:all 0.15s;}
+  .media-btn:hover{border-color:var(--brand);background:var(--brand-light);color:var(--brand-dark);}
+  .media-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .media-thumb{position:relative;width:80px;height:80px;border:1px solid var(--border);border-radius:4px;overflow:hidden;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;}
+  .media-thumb img{max-width:100%;max-height:100%;object-fit:contain;}
+  .media-thumb .del-thumb{position:absolute;top:2px;right:2px;background:rgba(163,45,45,0.85);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .doc-list{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+  .doc-item{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--white);border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:Arial,sans-serif;}
+  .doc-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .doc-item button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--white);border-radius:var(--radius);padding:2rem;width:400px;border-top:3px solid var(--red);box-shadow:0 4px 24px rgba(0,0,0,0.2);}
+  .modal h3{font-size:16px;font-weight:normal;margin-bottom:8px;}
+  .modal p{font-size:13px;color:var(--ink-mid);margin-bottom:1.5rem;}
+  .modal .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+
+  /* IMPORT */
+  .import-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--white);}
+  .import-zone:hover{border-color:var(--brand);background:var(--brand-light);}
+  .import-zone p{font-size:13px;color:var(--ink-light);margin-top:6px;}
+
+  @media print{header,#sync-bar,#setup-banner,.toolbar,.form-actions,.td-actions,nav{display:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- SAVING OVERLAY -->
+<div class="saving-overlay" id="saving-overlay">
+  <div class="saving-box">
+    <div class="spinner"></div>
+    <p id="saving-msg">Guardando en Google Sheets…</p>
+  </div>
+</div>
+
+<header>
+  <nav>
+    <button class="active" onclick="showView('lista')">Registros</button>
+    <button onclick="showView('form');initForm()">Nuevo bien</button>
+    <button onclick="showView('importar')">Importar Excel</button>
+    <button onclick="showView('config')">⚙ Configuración</button>
+  </nav>
+  <div class="brand-sep"></div>
+  <div class="brand">
+    <span class="brand-name">Ana Serrano</span>
+    <span class="brand-company">Numismatics <strong>&amp;</strong> Heritage Advisor SL</span>
+  </div>
+</header>
+
+<!-- SYNC BAR -->
+<div id="sync-bar" class="offline">
+  <div class="sync-dot"></div>
+  <span id="sync-msg">Configuración pendiente — los datos se guardan solo en este navegador</span>
+</div>
+
+<!-- SETUP BANNER (visible si no hay API configurada) -->
+<div id="setup-banner">
+  <p>📋 Pega aquí la URL de tu Google Apps Script para activar la sincronización con Google Sheets:</p>
+  <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/…/exec">
+  <button onclick="saveApiUrl()">Conectar</button>
+</div>
+
+<!-- VISTA: LISTA -->
+<div class="main visible" id="view-lista">
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <input type="text" id="search-input" placeholder="Buscar por nombre, autor, descripción…" oninput="renderTable()">
+      <select id="filter-tipo" onchange="renderTable()">
+        <option value="">Todos los tipos</option>
+        <option>Numismática</option><option>Pintura</option><option>Escultura</option>
+        <option>Joyería</option><option>Mobiliario</option><option>Bibliografía</option><option>Otro</option>
+      </select>
+      <select id="filter-estado" onchange="renderTable()">
+        <option value="">Todos los estados</option>
+        <option>En propiedad</option><option>En depósito</option><option>Cedida</option>
+        <option>Enajenada</option><option>Destruida</option><option>Robada</option>
+        <option>Devuelta</option><option>No localizada</option>
+      </select>
+      <span class="records-count" id="records-count"></span>
+    </div>
+    <div class="toolbar-row">
+      <button class="btn btn-informe" onclick="exportAllPDF()">📄 Generar informe PDF</button>
+      <button class="btn" onclick="exportExcel()">⬇ Exportar Excel</button>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="openMassEdit()">✏ Edición masiva</button>
+      <button class="btn btn-primary" onclick="showView('form');initForm()">+ Nuevo bien</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Nombre</th><th>Autor</th><th>Tipo</th><th>Localización</th>
+        <th>Solicitante</th><th>Fecha tasación</th><th>Valor tasación</th>
+        <th>Estado</th><th>Conservación</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- VISTA: FORMULARIO -->
+<div class="main" id="view-form">
+  <div class="form-header">
+    <div><h2 id="form-title">Nuevo bien patrimonial</h2><div class="form-id" id="form-subtitle"></div></div>
+    <button class="btn" onclick="showView('lista')" style="margin-left:auto">← Volver</button>
+  </div>
+  <form id="bien-form" onsubmit="saveRecord(event)">
+
+    <div class="form-section">
+      <div class="form-section-title">Identificación</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre / Título *</label><input type="text" id="f-nombre" required></div>
+        <div class="form-group"><label>Autor / Artista</label><input type="text" id="f-autor" placeholder="Ej: Goya, Anónimo…"></div>
+        <div class="form-group"><label>Nº ID (app)</label><input type="text" id="f-activo" placeholder="Asignado automáticamente"></div>
+        <div class="form-group"><label>Nº Referencia en catálogo</label><input type="text" id="f-activo-nuevo" placeholder="Ej: CAT-2024-001"></div>
+        <div class="form-group"><label>Solicitante</label><input type="text" id="f-solicitante"></div>
+        <div class="form-group"><label>Localización</label><input type="text" id="f-localizacion" placeholder="Ej: Vitrina 3, Almacén A…"></div>
+        <div class="form-group"><label>Ciudad</label><input type="text" id="f-ciudad" placeholder="Ej: Córdoba, Madrid…"></div>
+        <div class="form-group"><label>Tipo de bien *</label>
+          <select id="f-tipo" required><option value="">— Seleccionar —</option>
+            <option>Numismática</option><option>Pintura</option><option>Escultura</option>
+            <option>Joyería</option><option>Mobiliario</option><option>Bibliografía</option><option>Otro</option>
+          </select></div>
+        <div class="form-group"><label>Categoría</label><input type="text" id="f-categoria" placeholder="Ej: Retrato, Moneda romana…"></div>
+        <div class="form-group"><label>BIC (Bien de Interés Cultural)</label>
+          <div class="radio-group"><label><input type="radio" name="bic" value="Sí"> Sí</label><label><input type="radio" name="bic" value="No" checked> No</label></div></div>
+        <div class="form-group"><label>Propiedad</label><input type="text" id="f-propiedad" placeholder="Ej: Colección privada, Fundación…"></div>
+        <div class="form-group"><label>Material</label><input type="text" id="f-material" placeholder="Ej: Mármol, Madera, Tela…"></div>
+        <div class="form-group full"><label>Descripción</label><textarea id="f-descripcion" rows="3"></textarea></div>
+        <div class="form-group full"><label>Exposiciones</label><textarea id="f-exposiciones" rows="2" placeholder="Nombre, lugar, año…"></textarea></div>
+        <div class="form-group"><label>Fecha de adquisición</label><input type="date" id="f-fecha-adq"></div>
+        <div class="form-group"><label>Etiquetas</label><input type="text" id="f-etiquetas" placeholder="Ej: s.XVIII, plata, Roma…"></div>
+        <div class="form-group"><label>Fecha de creación</label><input type="text" id="f-anio" placeholder="Ej: 1750, s.XVIII, c.1650"></div>
+        <div class="form-group"><label>Época / Contexto histórico</label><input type="text" id="f-epoca"></div>
+        <div class="form-group"><label>Técnica</label><input type="text" id="f-tecnica" placeholder="Ej: Óleo sobre lienzo…"></div>
+        <div class="form-group"><label>Procedencia</label><input type="text" id="f-procedencia"></div>
+        <div class="form-group"><label>Posición de la firma</label><input type="text" id="f-firma"></div>
+        <div class="form-group"><label>Marco</label><div class="radio-group"><label><input type="radio" name="marco" value="Sí"> Sí</label><label><input type="radio" name="marco" value="No" checked> No</label></div></div>
+        <div class="form-group"><label>Restaurado</label><div class="radio-group"><label><input type="radio" name="restaurado" value="Sí"> Sí</label><label><input type="radio" name="restaurado" value="No" checked> No</label></div></div>
+        <div class="form-group"><label>Certificado de autenticidad</label><div class="radio-group"><label><input type="radio" name="cert-aut" value="Sí"> Sí</label><label><input type="radio" name="cert-aut" value="No" checked> No</label></div></div>
+        <div class="form-group"><label>Escritura de adquisición</label><div class="radio-group"><label><input type="radio" name="escritura" value="Sí"> Sí</label><label><input type="radio" name="escritura" value="No" checked> No</label></div></div>
+        <div class="form-group full"><label>Bibliografía</label><textarea id="f-bibliografia" rows="2"></textarea></div>
+        <div class="form-group"><label>Póliza de seguros</label><input type="text" id="f-poliza"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Estado del bien</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Estado</label>
+          <select id="f-estado"><option>En propiedad</option><option>En depósito</option><option>Cedida</option>
+            <option>Enajenada</option><option>Enajenada DT Madrid</option><option>Destruida</option>
+            <option>Robada</option><option>Devuelta</option><option>No localizada</option>
+            <option>Propuesta de baja</option><option>Donación</option></select></div>
+        <div class="form-group"><label>Fecha de baja</label><input type="date" id="f-fecha-baja"></div>
+        <div class="form-group"><label>Conservación</label>
+          <select id="f-conservacion"><option>Bueno</option><option>Regular</option><option>Malo</option></select></div>
+        <div class="form-group full"><label>Observaciones al estado</label><textarea id="f-obs-estado" rows="2"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Medidas y peso</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Alto (cm)</label><input type="number" id="f-alto" step="0.1" min="0"></div>
+        <div class="form-group"><label>Ancho (cm)</label><input type="number" id="f-ancho" step="0.1" min="0"></div>
+        <div class="form-group"><label>Profundidad (cm)</label><input type="number" id="f-prof" step="0.1" min="0"></div>
+        <div class="form-group"><label>Diámetro (cm)</label><input type="number" id="f-diam" step="0.1" min="0"></div>
+        <div class="form-group"><label>Peso (g)</label><input type="number" id="f-peso" step="0.01" min="0"></div>
+        <div class="form-group full"><label>Dimensiones</label><input type="text" id="f-dimensiones" placeholder="Ej: 30 x 45 x 10 cm"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Tasación y valores económicos</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Valor de tasación (€)</label><input type="number" id="f-valor" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="form-group"><label>Fecha de tasación</label><input type="date" id="f-fecha-tasacion"></div>
+        <div class="form-group"><label>Valor de compra (€)</label><input type="number" id="f-valor-compra" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="form-group"><label>Valor de venta (€)</label><input type="number" id="f-valor-venta" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Numismática (si aplica)</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Metal / Material</label>
+          <select id="f-metal"><option value="">— N/A —</option><option>Oro</option><option>Plata</option>
+            <option>Bronce</option><option>Cobre</option><option>Vellón</option><option>Níquel</option>
+            <option>Aluminio</option><option>Bimetálica</option><option>Otro</option></select></div>
+        <div class="form-group"><label>Ceca / Ceca de emisión</label><input type="text" id="f-ceca"></div>
+        <div class="form-group"><label>Reinado / Emisor</label><input type="text" id="f-reinado"></div>
+        <div class="form-group"><label>Denominación</label><input type="text" id="f-denominacion"></div>
+        <div class="form-group"><label>Grado de conservación (Sheldon)</label>
+          <select id="f-sheldon"><option value="">— N/A —</option><option>P1 – Mala</option>
+            <option>FR2 – Regular</option><option>AG3 – Muy mala</option><option>G4/G6 – Buena</option>
+            <option>VG8/VG10 – Muy buena</option><option>F12/F15 – Fina</option>
+            <option>VF20-VF35 – Muy fina</option><option>EF/XF40-EF45 – Extremadamente fina</option>
+            <option>AU50-AU58 – Sin circular</option><option>MS60-MS70 – Sin circular (Mint)</option></select></div>
+        <div class="form-group"><label>Referencia catálogo</label><input type="text" id="f-catalogo"></div>
+        <div class="form-group"><label>Anverso (descripción)</label><textarea id="f-anverso" rows="2"></textarea></div>
+        <div class="form-group"><label>Reverso (descripción)</label><textarea id="f-reverso" rows="2"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Imágenes</div>
+      <div style="padding:16px">
+        <div class="media-actions">
+          <button type="button" class="media-btn" onclick="document.getElementById('img-file-input').click()">＋ Añadir imagen</button>
+          <button type="button" class="media-btn" onclick="pasteImage()">📋 Pegar imagen</button>
+          <button type="button" class="media-btn" onclick="downloadImages()">⬇ Descargar</button>
+        </div>
+        <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
+        <div class="media-preview" id="img-preview"></div>
+        <div class="form-group" style="margin-top:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-light);font-family:Arial,sans-serif">Foto (enlace Google Drive)</label><input type="text" id="f-foto-drive" placeholder="https://drive.google.com/…" style="padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-family:Georgia,serif;font-size:13px;background:var(--surface);width:100%"></div>
+        <div id="img-paste-hint" style="font-size:12px;color:var(--ink-light);margin-top:6px;display:none">Pulsa Ctrl+V para pegar una imagen del portapapeles</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Documentación</div>
+      <div style="padding:16px">
+        <div class="media-actions">
+          <button type="button" class="media-btn" onclick="document.getElementById('doc-file-input').click()">＋ Añadir documento</button>
+          <button type="button" class="media-btn" onclick="pasteDoc()">📋 Pegar texto / enlace</button>
+          <button type="button" class="media-btn" onclick="downloadDocs()">⬇ Descargar</button>
+        </div>
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png" multiple style="display:none" onchange="addDocs(this.files)">
+        <div class="doc-list" id="doc-list"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Observaciones generales</div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Observaciones generales</label><textarea id="f-observaciones" rows="4"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn" onclick="showView('lista')">Cancelar</button>
+      <button type="button" class="btn btn-clone" onclick="cloneRecord()">⧉ Clonar registro</button>
+      <button type="submit" class="btn btn-primary">💾 Guardar registro</button>
+    </div>
+  </form>
+</div>
+
+<!-- VISTA: IMPORTAR -->
+<div class="main" id="view-importar">
+  <div class="form-header">
+    <div><h2>Importar registros desde Excel</h2><div class="form-id">Cada fila del Excel se convierte en un registro</div></div>
+    <button class="btn" onclick="showView('lista')" style="margin-left:auto">← Volver</button>
+  </div>
+  <div class="form-section">
+    <div class="form-section-title">Columnas reconocidas</div>
+    <div style="padding:16px;font-size:13px;color:var(--ink-mid);line-height:1.9">
+      <strong>Nombre</strong> (obligatorio), Autor, Tipo, Categoría, Solicitante, Localización, Descripción, Estado, Conservación, Valor tasación, Fecha tasación, Valor compra, Valor venta, Año, Época, Técnica, Procedencia, Metal, Ceca, Reinado, Denominación, Alto, Ancho, Diámetro, Peso, BIC, Bibliografía, Exposiciones, Póliza, Observaciones.
+    </div>
+  </div>
+  <div class="import-zone" onclick="document.getElementById('xl-input').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+    <div style="font-size:36px">📂</div>
+    <strong style="font-size:15px">Pulsa aquí o arrastra tu archivo Excel</strong>
+    <p>Formatos admitidos: .xlsx, .xls, .csv</p>
+    <input type="file" id="xl-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this.files[0])">
+  </div>
+  <div id="import-result" style="margin-top:1rem"></div>
+</div>
+
+<!-- VISTA: CONFIGURACIÓN -->
+<div class="main" id="view-config">
+  <div class="form-header">
+    <div><h2>Configuración</h2><div class="form-id">Conexión con Google Sheets</div></div>
+    <button class="btn" onclick="showView('lista')" style="margin-left:auto">← Volver</button>
+  </div>
+  <div class="form-section">
+    <div class="form-section-title">URL de Google Apps Script</div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <p style="font-size:13px;color:var(--ink-mid);line-height:1.8">
+        Pega aquí la URL que obtienes al publicar tu Apps Script como aplicación web.<br>
+        Cuando esté configurada, todos los registros se guardarán automáticamente en tu Google Sheet.
+      </p>
+      <input type="text" id="api-url-config" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'Georgia',serif;width:100%" placeholder="https://script.google.com/macros/s/…/exec">
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveApiUrlFromConfig()">Guardar y conectar</button>
+        <button class="btn" onclick="testConnection()">Probar conexión</button>
+        <button class="btn" style="color:var(--red);border-color:var(--red)" onclick="clearApiUrl()">Desconectar</button>
+      </div>
+      <div id="config-status" style="font-size:13px"></div>
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="form-section-title">Datos locales</div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:10px">
+      <p style="font-size:13px;color:var(--ink-mid)">Los registros también se mantienen en el navegador como copia de seguridad local.</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="syncFromSheets()">⟳ Recargar desde Google Sheets</button>
+        <button class="btn" style="color:var(--red)" onclick="clearLocal()">Borrar caché local</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN MASIVA -->
+<div class="modal-overlay" id="mass-modal">
+  <div class="modal" style="width:480px;border-top-color:var(--brand)">
+    <h3>Edición masiva</h3>
+    <p style="margin-bottom:1rem">Aplica un valor a un campo en <strong>todos los registros visibles</strong> (según los filtros activos).<br><span id="mass-count-info" style="color:var(--brand);font-weight:bold"></span></p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem">
+      <div>
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-light);font-family:Arial,sans-serif;display:block;margin-bottom:4px">Campo a modificar</label>
+        <select id="mass-field" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:Georgia,serif;font-size:13px" onchange="updateMassValueType()">
+          <option value="">— Seleccionar campo —</option>
+          <option value="autor">Autor / Artista</option>
+          <option value="tipo">Tipo de bien</option>
+          <option value="categoria">Categoría</option>
+          <option value="solicitante">Solicitante</option>
+          <option value="localizacion">Localización</option>
+          <option value="propiedad">Propiedad</option>
+          <option value="material">Material</option>
+          <option value="estado">Estado</option>
+          <option value="conservacion">Conservación</option>
+          <option value="bic">BIC</option>
+          <option value="epoca">Época / Contexto histórico</option>
+          <option value="tecnica">Técnica</option>
+          <option value="procedencia">Procedencia</option>
+          <option value="marco">Marco</option>
+          <option value="restaurado">Restaurado</option>
+          <option value="certAut">Certificado de autenticidad</option>
+          <option value="escritura">Escritura de adquisición</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-light);font-family:Arial,sans-serif;display:block;margin-bottom:4px">Nuevo valor</label>
+        <div id="mass-value-wrap">
+          <input type="text" id="mass-value" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:Georgia,serif;font-size:13px" placeholder="Escribe el valor…">
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeMassModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="applyMassEdit()">Aplicar a todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BORRADO -->
+<div class="modal-overlay" id="del-modal">
+  <div class="modal">
+    <h3>Eliminar registro</h3>
+    <p id="del-modal-text"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn" id="del-confirm-btn" style="background:var(--red);color:#fff;border-color:var(--red)">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ══════════════════════════════════════════════════════════════
+let API_URL = localStorage.getItem('tasa_api_url') || '';
+let records = JSON.parse(localStorage.getItem('tasa_records') || '[]');
+let editingId = null;
+let nextId = records.length ? Math.max(...records.map(r=>parseInt(r.id)||0))+1 : 1;
+let pendingDeleteId = null;
+let currentImages = [];
+let currentDocs = [];
+
+// Datos de ejemplo si está vacío
+if (records.length === 0) {
+  records = [
+    {id:1,nombre:'Denario de Trajano',autor:'',tipo:'Numismática',categoria:'Moneda romana',
+     solicitante:'Museo Municipal',localizacion:'Vitrina 1',descripcion:'Denario de plata, anverso retrato laureado, reverso Abundantia.',
+     fechaAdq:'2015-03-10',estado:'En propiedad',conservacion:'Bueno',bic:'No',
+     valor:'850',fechaTasacion:'2024-06-01',valorCompra:'400',valorVenta:'',
+     anio:'98-117 d.C.',epoca:'Imperio Romano',tecnica:'',procedencia:'Colección particular, Sevilla',exposiciones:'',
+     marco:'No',restaurado:'No',certAut:'Sí',escritura:'No',
+     alto:'',ancho:'',prof:'',diam:'1.8',peso:'3.2',
+     metal:'Plata',ceca:'Roma',reinado:'Trajano',denominacion:'Denario',
+     sheldon:'VF20-VF35 – Muy fina',catalogo:'RIC II 53',
+     anverso:'IMP CAES NERVA TRAIAN AVG GERM, busto laureado a der.',
+     reverso:'PM TR P COS II PP, Abundantia en pie a izq.',
+     bibliografia:'Roman Imperial Coinage, vol. II',firma:'',poliza:'POL-2024-001',
+     etiquetas:'romana, plata',obsEstado:'',observaciones:'',fechaBaja:'',images:[],docs:[]},
+    {id:2,nombre:'Bodegón con frutas',autor:'Anónimo flamenco',tipo:'Pintura',categoria:'Bodegón',
+     solicitante:'Fundación Arte Córdoba',localizacion:'Sala 3',descripcion:'Óleo sobre lienzo, siglo XVII.',
+     fechaAdq:'2001-09-20',estado:'En depósito',conservacion:'Regular',bic:'No',
+     valor:'12500',fechaTasacion:'2024-01-15',valorCompra:'8000',valorVenta:'',
+     anio:'c. 1650',epoca:'Barroco flamenco',tecnica:'Óleo sobre lienzo',procedencia:'Galería Amsterdam',
+     exposiciones:'Museo del Prado, 2019',marco:'Sí',restaurado:'Sí',certAut:'No',escritura:'Sí',
+     alto:'62',ancho:'85',prof:'',diam:'',peso:'',metal:'',ceca:'',reinado:'',denominacion:'',
+     sheldon:'',catalogo:'',anverso:'',reverso:'',
+     bibliografia:'',firma:'Ángulo inferior izquierdo (ilegible)',poliza:'POL-2024-002',
+     etiquetas:'flamenca, barroco',obsEstado:'Pequeñas pérdidas de capa pictórica.',
+     observaciones:'Precisa revisión de marco.',fechaBaja:'',images:[],docs:[]}
+  ];
+  nextId = 3;
+  saveLocal();
+}
+
+function saveLocal() {
+  localStorage.setItem('tasa_records', JSON.stringify(records));
+}
+
+// ══════════════════════════════════════════════════════════════
+// API GOOGLE SHEETS
+// ══════════════════════════════════════════════════════════════
+function updateSyncBar(state, msg) {
+  const bar = document.getElementById('sync-bar');
+  const txt = document.getElementById('sync-msg');
+  bar.className = state;
+  txt.textContent = msg;
+}
+
+function showSaving(msg) {
+  document.getElementById('saving-msg').textContent = msg || 'Guardando en Google Sheets…';
+  document.getElementById('saving-overlay').classList.add('show');
+}
+function hideSaving() { document.getElementById('saving-overlay').classList.remove('show'); }
+
+async function apiGet(params) {
+  if (!API_URL) return null;
+  // Usar fetch con mode:'cors' y redirect:'follow' para Apps Script
+  const url = API_URL + '?' + new URLSearchParams(params);
+  const res = await fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    redirect: 'follow',
+    cache: 'no-cache'
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Respuesta no válida: '+text.substring(0,100)); }
+}
+
+async function apiPost(body) {
+  if (!API_URL) return null;
+  // Usar GET con parámetros codificados para evitar problemas CORS con POST
+  const payload = encodeURIComponent(JSON.stringify(body));
+  const url = API_URL + '?method=POST&payload=' + payload;
+  const res = await fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    redirect: 'follow',
+    cache: 'no-cache'
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Respuesta no válida: '+text.substring(0,100)); }
+}
+
+async function syncFromSheets() {
+  if (!API_URL) { alert('Primero configura la URL de Google Apps Script en ⚙ Configuración.'); return; }
+  updateSyncBar('loading', 'Cargando datos desde Google Sheets…');
+  try {
+    const data = await apiGet({action:'getAll'});
+    if (data && data.ok) {
+      records = data.records;
+      nextId = records.length ? Math.max(...records.map(r=>parseInt(r.id)||0))+1 : 1;
+      saveLocal();
+      updateSyncBar('ok', `✓ Sincronizado con Google Sheets — ${records.length} registros`);
+      renderStats(); renderTable();
+    } else {
+      updateSyncBar('error', '✗ Error al leer Google Sheets: '+(data&&data.error||'desconocido'));
+    }
+  } catch(e) {
+    updateSyncBar('error', '✗ No se pudo conectar: '+e.message);
+  }
+}
+
+async function saveToSheets(record) {
+  if (!API_URL) return;
+  // Separar imágenes y docs para enviarlos aparte (son grandes)
+  const recToSend = {...record, images:[], docs:[]};
+  const res = await apiPost({action:'save', record:recToSend});
+  if (!res || !res.ok) throw new Error(res&&res.error||'Error al guardar');
+  const id = res.id;
+  // Guardar imágenes
+  if (record.images && record.images.length) {
+    await apiPost({action:'saveImages', id, images:record.images});
+  }
+  // Guardar docs
+  if (record.docs && record.docs.length) {
+    await apiPost({action:'saveDocs', id, docs:record.docs});
+  }
+  return id;
+}
+
+async function deleteFromSheets(id) {
+  if (!API_URL) return;
+  await apiPost({action:'delete', id});
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIGURACIÓN API URL
+// ══════════════════════════════════════════════════════════════
+function updateSetupBanner() {
+  document.getElementById('setup-banner').style.display = API_URL ? 'none' : 'flex';
+  if (API_URL) document.getElementById('api-url-config').value = API_URL;
+}
+
+function saveApiUrl() {
+  const url = document.getElementById('api-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    alert('La URL no parece válida. Debe empezar por https://script.google.com/macros/s/…'); return;
+  }
+  API_URL = url;
+  localStorage.setItem('tasa_api_url', API_URL);
+  updateSetupBanner();
+  syncFromSheets();
+}
+
+function saveApiUrlFromConfig() {
+  const url = document.getElementById('api-url-config').value.trim();
+  if (!url.startsWith('https://')) { alert('URL no válida.'); return; }
+  API_URL = url;
+  localStorage.setItem('tasa_api_url', API_URL);
+  updateSetupBanner();
+  document.getElementById('config-status').innerHTML = '<span style="color:var(--brand)">✓ URL guardada. Probando conexión…</span>';
+  syncFromSheets();
+}
+
+async function testConnection() {
+  if (!document.getElementById('api-url-config').value.trim()) { alert('Introduce primero la URL.'); return; }
+  API_URL = document.getElementById('api-url-config').value.trim();
+  document.getElementById('config-status').innerHTML = '<span style="color:#854F0B">Probando…</span>';
+  try {
+    const data = await apiGet({action:'getAll'});
+    if (data && data.ok) {
+      document.getElementById('config-status').innerHTML = `<span style="color:var(--brand)">✓ Conexión correcta — ${data.records.length} registros en Google Sheets</span>`;
+    } else {
+      document.getElementById('config-status').innerHTML = `<span style="color:var(--red)">✗ Error: ${data&&data.error||'respuesta inesperada'}</span>`;
+    }
+  } catch(e) {
+    document.getElementById('config-status').innerHTML = `<span style="color:var(--red)">✗ No se pudo conectar: ${e.message}</span>`;
+  }
+}
+
+function clearApiUrl() {
+  if (!confirm('¿Desconectar de Google Sheets? Los datos locales se conservarán.')) return;
+  API_URL = '';
+  localStorage.removeItem('tasa_api_url');
+  updateSetupBanner();
+  updateSyncBar('offline','Sin conexión a Google Sheets — datos guardados solo en este navegador');
+  document.getElementById('config-status').innerHTML = '';
+}
+
+function clearLocal() {
+  if (!confirm('¿Borrar la caché local? Solo afecta a este navegador, los datos en Google Sheets no se tocan.')) return;
+  localStorage.removeItem('tasa_records');
+  records = [];
+  saveLocal();
+  renderStats(); renderTable();
+}
+
+// ══════════════════════════════════════════════════════════════
+// VISTAS
+// ══════════════════════════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.main').forEach(el=>el.classList.remove('visible'));
+  document.getElementById('view-'+name).classList.add('visible');
+  document.querySelectorAll('header nav button').forEach(b=>b.classList.remove('active'));
+  const idx={lista:0,form:1,importar:2,config:3}[name];
+  if (idx!==undefined) document.querySelectorAll('header nav button')[idx].classList.add('active');
+  if (name==='lista'){renderStats();renderTable();}
+}
+
+// ══════════════════════════════════════════════════════════════
+// ESTADÍSTICAS
+// ══════════════════════════════════════════════════════════════
+function renderStats() {
+  const total=records.length;
+  const vt=records.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+  const tipos=[...new Set(records.map(r=>r.tipo).filter(Boolean))].length;
+  const bics=records.filter(r=>r.bic==='Sí').length;
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total bienes</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Valor total tasado</div><div class="stat-value">${vt.toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}</div></div>
+    <div class="stat-card"><div class="stat-label">Tipos de bien</div><div class="stat-value">${tipos}</div></div>
+    <div class="stat-card"><div class="stat-label">Bienes BIC</div><div class="stat-value">${bics}</div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABLA
+// ══════════════════════════════════════════════════════════════
+function renderTable() {
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const tipo=document.getElementById('filter-tipo').value;
+  const estado=document.getElementById('filter-estado').value;
+  let f=records.filter(r=>{
+    const m=!q||[r.nombre,r.autor,r.descripcion,r.solicitante,r.categoria,r.localizacion].some(v=>(v||'').toLowerCase().includes(q));
+    return m&&(!tipo||r.tipo===tipo)&&(!estado||r.estado===estado);
+  });
+  document.getElementById('records-count').textContent=`${f.length} registro${f.length!==1?'s':''}`;
+  const tbody=document.getElementById('table-body');
+  if(!f.length){tbody.innerHTML=`<tr><td colspan="11"><div class="empty-state"><h3>Sin resultados</h3><p>Ajusta los filtros o crea un nuevo registro.</p></div></td></tr>`;return;}
+  tbody.innerHTML=f.map(r=>`
+    <tr>
+      <td style="color:var(--ink-light);font-size:12px">#${String(r.id).padStart(4,'0')}</td>
+      <td><strong>${esc(r.nombre)}</strong>${r.bic==='Sí'?'<span class="badge" style="background:#E8F0EB;color:var(--brand);margin-left:5px">BIC</span>':''}</td>
+      <td style="font-size:12px;color:var(--ink-mid)">${esc(r.autor||'—')}</td>
+      <td><span class="badge badge-type">${esc(r.tipo||'—')}</span></td>
+      <td style="font-size:12px">${esc(r.localizacion||'—')}</td>
+      <td style="font-size:12px">${esc(r.solicitante||'—')}</td>
+      <td style="font-size:12px">${r.fechaTasacion?fmt(r.fechaTasacion):'—'}</td>
+      <td style="font-weight:500">${r.valor?parseFloat(r.valor).toLocaleString('es-ES',{style:'currency',currency:'EUR'}):'—'}</td>
+      <td style="font-size:12px">${esc(r.estado||'—')}</td>
+      <td><span class="badge ${r.conservacion==='Bueno'?'badge-good':r.conservacion==='Regular'?'badge-regular':'badge-bad'}">${esc(r.conservacion||'—')}</span></td>
+      <td><div class="td-actions">
+        <button class="btn-edit" onclick="editRecord(${r.id})">Editar</button>
+        <button class="btn-pdf" onclick="exportSinglePDF(${r.id})">PDF</button>
+        <button class="btn-clon" onclick="cloneFromList(${r.id})">Clonar</button>
+        <button class="btn-del" onclick="confirmDelete(${r.id})">Borrar</button>
+      </div></td>
+    </tr>`).join('');
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(d){if(!d)return '';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+
+// ══════════════════════════════════════════════════════════════
+// FORMULARIO
+// ══════════════════════════════════════════════════════════════
+function initForm(){
+  editingId=null; currentImages=[]; currentDocs=[];
+  document.getElementById('form-title').textContent='Nuevo bien patrimonial';
+  document.getElementById('form-subtitle').textContent=`ID: #${String(nextId).padStart(4,'0')}`;
+  document.getElementById('bien-form').reset();
+  setR('marco','No');setR('restaurado','No');setR('cert-aut','No');setR('escritura','No');setR('bic','No');
+  renderImagePreviews();renderDocList();
+}
+function editRecord(id){
+  const r=records.find(x=>x.id==id); if(!r)return;
+  editingId=id; currentImages=[...(r.images||[])]; currentDocs=[...(r.docs||[])];
+  document.getElementById('form-title').textContent='Editar bien patrimonial';
+  document.getElementById('form-subtitle').textContent=`ID: #${String(id).padStart(4,'0')} — ${r.nombre}`;
+  fillForm(r); showView('form');
+}
+function fillForm(r){
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  s('f-nombre',r.nombre);s('f-autor',r.autor);s('f-activo',r.activo);s('f-activo-nuevo',r.activoNuevo);
+  s('f-solicitante',r.solicitante);s('f-localizacion',r.localizacion);s('f-ciudad',r.ciudad);s('f-propiedad',r.propiedad);s('f-material',r.material);s('f-tipo',r.tipo);s('f-categoria',r.categoria);
+  s('f-descripcion',r.descripcion);s('f-exposiciones',r.exposiciones);s('f-fecha-adq',r.fechaAdq);
+  s('f-poliza',r.poliza);s('f-etiquetas',r.etiquetas);s('f-estado',r.estado);s('f-fecha-baja',r.fechaBaja);
+  s('f-conservacion',r.conservacion);s('f-obs-estado',r.obsEstado);s('f-valor',r.valor);
+  s('f-fecha-tasacion',r.fechaTasacion);s('f-valor-compra',r.valorCompra);s('f-valor-venta',r.valorVenta);
+  s('f-anio',r.anio);s('f-epoca',r.epoca);s('f-tecnica',r.tecnica);s('f-procedencia',r.procedencia);
+  s('f-bibliografia',r.bibliografia);s('f-firma',r.firma);s('f-alto',r.alto);s('f-ancho',r.ancho);
+  s('f-prof',r.prof);s('f-diam',r.diam);s('f-peso',r.peso);s('f-dimensiones',r.dimensiones);s('f-foto-drive',r.fotoDrive);s('f-metal',r.metal);s('f-ceca',r.ceca);
+  s('f-reinado',r.reinado);s('f-denominacion',r.denominacion);s('f-sheldon',r.sheldon);
+  s('f-catalogo',r.catalogo);s('f-anverso',r.anverso);s('f-reverso',r.reverso);s('f-observaciones',r.observaciones);
+  setR('marco',r.marco||'No');setR('restaurado',r.restaurado||'No');
+  setR('cert-aut',r.certAut||'No');setR('escritura',r.escritura||'No');setR('bic',r.bic||'No');
+  renderImagePreviews();renderDocList();
+}
+function setR(name,val){document.querySelectorAll(`input[name="${name}"]`).forEach(el=>{el.checked=el.value===val;});}
+function getR(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:'';}
+function gv(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+
+function buildRec(id){
+  return{id,nombre:gv('f-nombre'),autor:gv('f-autor'),activo:gv('f-activo'),activoNuevo:gv('f-activo-nuevo'),
+    solicitante:gv('f-solicitante'),localizacion:gv('f-localizacion'),ciudad:gv('f-ciudad'),propiedad:gv('f-propiedad'),material:gv('f-material'),tipo:gv('f-tipo'),categoria:gv('f-categoria'),
+    descripcion:gv('f-descripcion'),exposiciones:gv('f-exposiciones'),fechaAdq:gv('f-fecha-adq'),
+    poliza:gv('f-poliza'),etiquetas:gv('f-etiquetas'),estado:gv('f-estado'),fechaBaja:gv('f-fecha-baja'),
+    conservacion:gv('f-conservacion'),obsEstado:gv('f-obs-estado'),valor:gv('f-valor'),
+    fechaTasacion:gv('f-fecha-tasacion'),valorCompra:gv('f-valor-compra'),valorVenta:gv('f-valor-venta'),
+    anio:gv('f-anio'),epoca:gv('f-epoca'),tecnica:gv('f-tecnica'),procedencia:gv('f-procedencia'),
+    bibliografia:gv('f-bibliografia'),firma:gv('f-firma'),marco:getR('marco'),restaurado:getR('restaurado'),
+    certAut:getR('cert-aut'),escritura:getR('escritura'),bic:getR('bic'),
+    alto:gv('f-alto'),ancho:gv('f-ancho'),prof:gv('f-prof'),diam:gv('f-diam'),peso:gv('f-peso'),
+    metal:gv('f-metal'),ceca:gv('f-ceca'),reinado:gv('f-reinado'),denominacion:gv('f-denominacion'),
+    dimensiones:gv('f-dimensiones'),fotoDrive:gv('f-foto-drive'),sheldon:gv('f-sheldon'),catalogo:gv('f-catalogo'),anverso:gv('f-anverso'),reverso:gv('f-reverso'),
+    observaciones:gv('f-observaciones'),images:[...currentImages],docs:[...currentDocs]};
+}
+
+async function saveRecord(e){
+  e.preventDefault();
+  const rec=buildRec(editingId||nextId);
+  if(editingId){records[records.findIndex(r=>r.id==editingId)]=rec;}
+  else{records.push(rec);nextId++;}
+  saveLocal();
+  if(API_URL){
+    showSaving();
+    try{await saveToSheets(rec);updateSyncBar('ok','✓ Guardado en Google Sheets');}
+    catch(err){updateSyncBar('error','✗ Error al guardar en Sheets: '+err.message);}
+    finally{hideSaving();}
+  }
+  showView('lista');
+}
+
+function cloneRecord(){
+  const rec=buildRec(nextId);
+  rec.nombre=rec.nombre+' (copia)';
+  records.push(rec);nextId++;saveLocal();
+  editingId=rec.id;
+  document.getElementById('form-title').textContent='Editar bien patrimonial (clonado)';
+  document.getElementById('form-subtitle').textContent=`ID: #${String(rec.id).padStart(4,'0')} — ${rec.nombre}`;
+  document.getElementById('f-nombre').value=rec.nombre;
+  alert(`Clonado con ID #${String(rec.id).padStart(4,'0')}. Ahora estás editando el clon.`);
+}
+function cloneFromList(id){
+  const r=records.find(x=>x.id==id);if(!r)return;
+  const clone={...r,id:nextId,nombre:r.nombre+' (copia)',images:[...(r.images||[])],docs:[...(r.docs||[])]};
+  records.push(clone);nextId++;saveLocal();
+  editingId=clone.id;currentImages=[...clone.images];currentDocs=[...clone.docs];
+  fillForm(clone);
+  document.getElementById('form-title').textContent='Editar bien patrimonial (clonado)';
+  document.getElementById('form-subtitle').textContent=`ID: #${String(clone.id).padStart(4,'0')} — ${clone.nombre}`;
+  showView('form');
+}
+
+// ══════════════════════════════════════════════════════════════
+// IMÁGENES
+// ══════════════════════════════════════════════════════════════
+function addImages(files){
+  Array.from(files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const MAX=300;let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        currentImages.push({name:file.name,dataUrl:canvas.toDataURL('image/jpeg',0.75)});
+        renderImagePreviews();
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('img-file-input').value='';
+}
+function pasteImage(){
+  document.getElementById('img-paste-hint').style.display='block';
+  document.addEventListener('paste',function h(e){
+    document.getElementById('img-paste-hint').style.display='none';
+    document.removeEventListener('paste',h);
+    const items=(e.clipboardData||e.originalEvent.clipboardData).items;
+    for(let item of items){if(item.type.indexOf('image')!==-1){addImages([item.getAsFile()]);}}
+  });
+}
+function renderImagePreviews(){
+  document.getElementById('img-preview').innerHTML=currentImages.map((img,i)=>`
+    <div class="media-thumb"><img src="${img.dataUrl}" alt="${esc(img.name)}">
+    <button class="del-thumb" onclick="currentImages.splice(${i},1);renderImagePreviews()" title="Eliminar">✕</button></div>`).join('');
+}
+function downloadImages(){
+  if(!currentImages.length){alert('No hay imágenes.');return;}
+  currentImages.forEach(img=>{const a=document.createElement('a');a.href=img.dataUrl;a.download=img.name;a.click();});
+}
+
+// ══════════════════════════════════════════════════════════════
+// DOCUMENTOS
+// ══════════════════════════════════════════════════════════════
+function addDocs(files){
+  Array.from(files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{currentDocs.push({name:file.name,dataUrl:e.target.result,type:file.type});renderDocList();};
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('doc-file-input').value='';
+}
+function pasteDoc(){
+  const text=prompt('Pega aquí el texto o enlace:');
+  if(text){currentDocs.push({name:'Texto pegado',dataUrl:'data:text/plain;base64,'+btoa(unescape(encodeURIComponent(text))),type:'text/plain'});renderDocList();}
+}
+function renderDocList(){
+  document.getElementById('doc-list').innerHTML=currentDocs.map((d,i)=>`
+    <div class="doc-item"><span>📎 ${esc(d.name)}</span>
+    <button onclick="const a=document.createElement('a');a.href=currentDocs[${i}].dataUrl;a.download=currentDocs[${i}].name;a.click()" title="Descargar">⬇</button>
+    <button onclick="currentDocs.splice(${i},1);renderDocList()" title="Eliminar">✕</button></div>`).join('');
+}
+function downloadDocs(){if(!currentDocs.length){alert('No hay documentos.');return;}currentDocs.forEach((_,i)=>{const a=document.createElement('a');a.href=currentDocs[i].dataUrl;a.download=currentDocs[i].name;a.click();});}
+
+// ══════════════════════════════════════════════════════════════
+// ELIMINAR
+// ══════════════════════════════════════════════════════════════
+function confirmDelete(id){
+  const r=records.find(x=>x.id==id);pendingDeleteId=id;
+  document.getElementById('del-modal-text').textContent=`¿Seguro que deseas eliminar "${r.nombre}"? Esta acción no se puede deshacer.`;
+  document.getElementById('del-modal').classList.add('open');
+  document.getElementById('del-confirm-btn').onclick=async()=>{
+    records=records.filter(x=>x.id!=pendingDeleteId);saveLocal();
+    if(API_URL){showSaving('Eliminando…');try{await deleteFromSheets(pendingDeleteId);}catch(e){}finally{hideSaving();}}
+    closeModal();renderStats();renderTable();
+  };
+}
+function closeModal(){document.getElementById('del-modal').classList.remove('open');}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORTAR EXCEL
+// ══════════════════════════════════════════════════════════════
+function exportExcel(){
+  const H=['ID','Nombre','Autor','Tipo','Categoría','Solicitante','Localización','BIC','Fecha Adq.',
+    'Estado','Conservación','Valor tasación (€)','Fecha Tasación','Valor compra (€)','Valor venta (€)',
+    'Año','Época','Técnica','Metal','Ceca','Reinado','Denominación','Sheldon','Catálogo',
+    'Diámetro (cm)','Peso (g)','Alto (cm)','Ancho (cm)','Prof. (cm)',
+    'Marco','Restaurado','Cert. Autenticidad','Escritura Adq.','Póliza','Etiquetas',
+    'Procedencia','Bibliografía','Exposiciones','Obs. estado','Observaciones'];
+  const rows=records.map(r=>[r.id,r.nombre,r.autor,r.tipo,r.categoria,r.solicitante,r.localizacion,r.bic,r.fechaAdq,
+    r.estado,r.conservacion,r.valor?parseFloat(r.valor):'',r.fechaTasacion,
+    r.valorCompra?parseFloat(r.valorCompra):'',r.valorVenta?parseFloat(r.valorVenta):'',
+    r.anio,r.epoca,r.tecnica,r.metal,r.ceca,r.reinado,r.denominacion,r.sheldon,r.catalogo,
+    r.diam,r.peso,r.alto,r.ancho,r.prof,r.marco,r.restaurado,r.certAut,r.escritura,r.poliza,r.etiquetas,
+    r.procedencia,r.bibliografia,r.exposiciones,r.obsEstado,r.observaciones]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([H,...rows]);
+  ws['!cols']=Array(H.length).fill({wch:18});
+  XLSX.utils.book_append_sheet(wb,ws,'Bienes');
+  XLSX.writeFile(wb,'AnaSerrano_Patrimonio.xlsx');
+}
+
+// ══════════════════════════════════════════════════════════════
+// IMPORTAR EXCEL
+// ══════════════════════════════════════════════════════════════
+function handleDrop(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f)importExcel(f);}
+// Mapa de columnas: nombre en excel (minúsculas) → campo interno
+const CM={
+  // Nombres del Excel de Ana Serrano
+  'nº referencia en catálogo':'activoNuevo',
+  'nº referencia en catalogo':'activoNuevo',
+  'nombre / título':'nombre','nombre / titulo':'nombre',
+  'tipo de bien':'tipo',
+  'descripción':'descripcion','descripcion':'descripcion',
+  'material':'material',
+  'dimensiones':'dimensiones',
+  'fecha de creación':'anio','fecha de creacion':'anio',
+  'foto (enlace google drive)':'fotoDrive','foto enlace google drive':'fotoDrive','foto':'fotoDrive',
+  'propiedad':'propiedad',
+  'localización':'localizacion','localizacion':'localizacion','ciudad':'ciudad',
+  'valor de venta':'valorVenta','valor venta':'valorVenta',
+  // Nombres genéricos adicionales
+  'nombre':'nombre','autor':'autor','autor / artista':'autor','autor/artista':'autor','tipo':'tipo',
+  'categoría':'categoria','categoria':'categoria',
+  'solicitante':'solicitante',
+  'estado':'estado',
+  'conservación':'conservacion','conservacion':'conservacion',
+  'valor tasación':'valor','valor tasacion':'valor','valor de tasación':'valor','valor de tasacion':'valor',
+  'valor de tasación (€)':'valor','valor de tasacion (€)':'valor','valor tasación (€)':'valor','valor tasacion (€)':'valor',
+  'fecha tasación':'fechaTasacion','fecha tasacion':'fechaTasacion','fecha de tasación':'fechaTasacion','fecha de tasacion':'fechaTasacion',
+  'valor compra':'valorCompra','valor de compra':'valorCompra',
+  'año':'anio','época':'epoca','epoca':'epoca',
+  'técnica':'tecnica','tecnica':'tecnica',
+  'procedencia':'procedencia','metal':'metal','ceca':'ceca','reinado':'reinado',
+  'denominación':'denominacion','denominacion':'denominacion',
+  'alto':'alto','ancho':'ancho','diámetro':'diam','diametro':'diam','peso':'peso',
+  'observaciones':'observaciones','bic':'bic',
+  'bibliografía':'bibliografia','bibliografia':'bibliografia',
+  'exposiciones':'exposiciones','póliza':'poliza','poliza':'poliza',
+  'nº id (app)':'activo','nº referencia catálogo':'activoNuevo'
+};
+
+async function importExcel(file){
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      // Leer todas las filas con header:1 para detectar cabecera automáticamente
+      const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      // Buscar la fila de cabecera: la primera que tenga al menos 3 celdas no vacías
+      // y al menos una coincida con nuestro mapa
+      let headerRowIdx=-1;
+      let headers=[];
+      for(let i=0;i<Math.min(20,allRows.length);i++){
+        const row=allRows[i];
+        const nonEmpty=row.filter(c=>c!==null&&c!==undefined&&String(c).trim()!=='');
+        if(nonEmpty.length>=3){
+          const mapped=row.map(h=>String(h||'').toLowerCase().trim());
+          const hits=mapped.filter(h=>CM[h]);
+          if(hits.length>=2){headerRowIdx=i;headers=mapped;break;}
+        }
+      }
+      if(headerRowIdx===-1){
+        showImportResult('No se encontró una fila de cabecera reconocible. Comprueba que el Excel tiene las columnas correctas.','error');
+        return;
+      }
+
+      const dataRows=allRows.slice(headerRowIdx+1);
+      let imported=0,skipped=0;
+      const newRecs=[];
+
+      dataRows.forEach(row=>{
+        // Saltar filas completamente vacías
+        if(!row.some(c=>c!==null&&c!==undefined&&String(c).trim()!==''))return;
+        const obj={id:nextId,images:[],docs:[],estado:'En propiedad',conservacion:'Bueno',
+          marco:'No',restaurado:'No',certAut:'No',escritura:'No',bic:'No'};
+        headers.forEach((h,i)=>{
+          const f=CM[h];
+          if(f&&row[i]!==undefined&&row[i]!==null&&String(row[i]).trim()!==''){
+            let val=row[i];
+            // Convertir fechas numéricas de Excel a formato dd/mm/yyyy
+            if((f==='fechaTasacion'||f==='fechaAdq'||f==='fechaBaja')&&typeof val==='number'){
+              // Número de serie Excel: días desde 1/1/1900
+              const date=new Date((val-25569)*86400*1000);
+              const dd=String(date.getUTCDate()).padStart(2,'0');
+              const mm=String(date.getUTCMonth()+1).padStart(2,'0');
+              const yyyy=date.getUTCFullYear();
+              val=yyyy+'-'+mm+'-'+dd; // formato YYYY-MM-DD para input date
+            } else if((f==='fechaTasacion'||f==='fechaAdq'||f==='fechaBaja')&&typeof val==='string'&&val.includes('/')){
+              // Formato dd/mm/yyyy → yyyy-mm-dd
+              const parts=val.split('/');
+              if(parts.length===3) val=parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+            }
+            obj[f]=String(val).trim();
+          }
+        });
+        if(!obj.nombre){skipped++;return;}
+        records.push(obj);newRecs.push(obj);nextId++;imported++;
+      });
+
+      saveLocal();
+      if(API_URL&&newRecs.length){
+        const BATCH=1;
+        const total=newRecs.length;
+        let enviados=0;
+        showSaving('Subiendo registros a Google Sheets… 0 de '+total);
+        try{
+          for(let i=0;i<newRecs.length;i+=BATCH){
+            const lote=newRecs.slice(i,i+BATCH).map(r=>({...r,images:[],docs:[]}));
+            await apiPost({action:'save',record:lote[0]});
+            enviados+=lote.length;
+            document.getElementById('saving-msg').textContent='Subiendo a Google Sheets… '+enviados+' de '+total;
+          }
+          updateSyncBar('ok','✓ '+total+' registros subidos a Google Sheets');
+        }catch(err){
+          updateSyncBar('error','✗ Error al subir a Sheets: '+err.message);
+          console.error(err);
+        }finally{hideSaving();}
+      }
+      showImportResult(`✓ ${imported} registros importados correctamente.${skipped?' ('+skipped+' filas omitidas por falta de Nombre)':''}`, 'ok');
+      setTimeout(()=>showView('lista'),2000);
+    }catch(err){showImportResult('Error al leer el archivo: '+err.message,'error');console.error(err);}
+  };
+  reader.readAsBinaryString(file);
+}
+function showImportResult(msg,type){
+  document.getElementById('import-result').innerHTML=`<div style="padding:14px 18px;border-radius:var(--radius);border:1px solid ${type==='ok'?'var(--brand)':'var(--red)'};background:${type==='ok'?'var(--brand-light)':'#FCEBEB'};color:${type==='ok'?'var(--brand-dark)':'var(--red)'};font-size:14px">${msg}</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// PDF
+// ══════════════════════════════════════════════════════════════
+function exportSinglePDF(id){
+  const r=records.find(x=>x.id==id);
+  if(r)generatePDF([r],`AnaSerrano_${String(r.id).padStart(4,'0')}_${r.nombre.replace(/\s+/g,'_').substring(0,30)}.pdf`);
+}
+function exportAllPDF(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const tipo=document.getElementById('filter-tipo').value;
+  const estado=document.getElementById('filter-estado').value;
+  let f=records.filter(r=>{
+    const m=!q||[r.nombre,r.autor,r.descripcion,r.solicitante,r.categoria].some(v=>(v||'').toLowerCase().includes(q));
+    return m&&(!tipo||r.tipo===tipo)&&(!estado||r.estado===estado);
+  });
+  if(!f.length){alert('No hay registros que exportar.');return;}
+  generatePDF(f,'AnaSerrano_Informe_Patrimonio.pdf');
+}
+
+function pdfHeader(doc,pageW){
+  doc.setFillColor(26,58,38);doc.rect(0,0,pageW,24,'F');
+  doc.setDrawColor(184,134,11);doc.setLineWidth(0.6);doc.line(0,24,pageW,24);
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('ANA SERRANO',pageW-20,10,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(245,230,178);
+  doc.text('NUMISMATICS  &  HERITAGE ADVISOR SL',pageW-20,16,{align:'right'});
+  doc.setFontSize(8);doc.setTextColor(184,134,11);
+  doc.text('Informe de Tasación',pageW-20,21,{align:'right'});
+}
+
+function generatePDF(recs,filename){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const margin=18,pageW=210,pageH=297,colW=(pageW-margin*2)/2;
+
+  recs.forEach((r,idx)=>{
+    if(idx>0)doc.addPage();
+    pdfHeader(doc,pageW);
+    let y=32;
+
+    doc.setTextColor(28,28,28);doc.setFont('helvetica','bold');doc.setFontSize(18);
+    doc.text(r.nombre,margin,y);y+=7;
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(120,120,120);
+    const sub=[r.autor&&`Autor: ${r.autor}`,`#${String(r.id).padStart(4,'0')}`,r.tipo,r.categoria].filter(Boolean).join('  ·  ');
+    doc.text(sub,margin,y);y+=2;
+    doc.setDrawColor(184,134,11);doc.setLineWidth(0.25);doc.line(margin,y+1,pageW-margin,y+1);y+=7;
+
+    if(r.valor){
+      doc.setFillColor(245,230,178);doc.roundedRect(margin,y,pageW-margin*2,18,2,2,'F');
+      doc.setTextColor(122,87,0);doc.setFont('helvetica','bold');doc.setFontSize(12);
+      doc.text('VALOR DE TASACIÓN:',margin+4,y+8);
+      doc.setFontSize(15);doc.text(parseFloat(r.valor).toLocaleString('es-ES',{style:'currency',currency:'EUR'}),pageW-margin-4,y+7,{align:'right'});
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(150,100,0);
+      const ex=[];
+      if(r.valorCompra)ex.push(`Compra: ${parseFloat(r.valorCompra).toLocaleString('es-ES',{style:'currency',currency:'EUR'})}`);
+      if(r.valorVenta)ex.push(`Venta: ${parseFloat(r.valorVenta).toLocaleString('es-ES',{style:'currency',currency:'EUR'})}`);
+      if(r.fechaTasacion)ex.push(`Fecha: ${fmt(r.fechaTasacion)}`);
+      doc.text(ex.join('    '),margin+4,y+14);y+=24;
+    }
+
+    const field=(label,val,x,yw,w)=>{
+      // Omitir vacíos y valores "No" en campos booleanos
+      if(!val||val===''||val==='No')return yw;
+      if(y>pageH-20){doc.addPage();pdfHeader(doc,pageW);yw=32;}
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(130,130,130);
+      doc.text(label.toUpperCase(),x,yw);yw+=5;
+      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(28,28,28);
+      const lines=doc.splitTextToSize(String(val),w-3);
+      doc.text(lines,x,yw);return yw+lines.length*5.5+4;
+    };
+    // Campo con hipervínculo (para URLs de Google Drive)
+    const fieldLink=(label,url,x,yw,w)=>{
+      if(!url||url==='')return yw;
+      if(y>pageH-20){doc.addPage();pdfHeader(doc,pageW);yw=32;}
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(130,130,130);
+      doc.text(label.toUpperCase(),x,yw);yw+=5;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(41,87,57);
+      // Texto visible acortado + hipervínculo real
+      const display=url.length>60?url.substring(0,57)+'…':url;
+      const lines=doc.splitTextToSize(display,w-3);
+      doc.textWithLink(lines[0],x,yw,{url:url});
+      if(lines.length>1){
+        doc.setTextColor(28,28,28);
+        for(let li=1;li<lines.length;li++){doc.text(lines[li],x,yw+li*4.2);}
+      }
+      doc.setTextColor(28,28,28);
+      return yw+lines.length*4.2+3;
+    };
+    const section=(title)=>{
+      if(y>pageH-30){doc.addPage();pdfHeader(doc,pageW);y=32;}
+      doc.setFillColor(232,240,235);doc.rect(margin,y,pageW-margin*2,6.5,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(41,87,57);
+      doc.text(title,margin+2,y+5.5);y+=13;
+    };
+
+    // ── FICHA PRINCIPAL: todos los campos requeridos, formato "Etiqueta: Valor"
+    const fullW=pageW-margin*2;
+
+    // Helper inline: siempre muestra etiqueta+valor en la misma línea
+    const fline=(label,val,yw)=>{
+      if(y>pageH-20){doc.addPage();pdfHeader(doc,pageW);yw=32;}
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(41,87,57);
+      const labelText=label+': ';
+      const labelW=doc.getTextWidth(labelText);
+      doc.text(labelText,margin,yw);
+      doc.setFont('helvetica','normal');doc.setTextColor(28,28,28);
+      const valStr=val&&val!==''?String(val):'—';
+      const valLines=doc.splitTextToSize(valStr,fullW-labelW-2);
+      doc.text(valLines[0],margin+labelW,yw);
+      if(valLines.length>1){
+        for(let li=1;li<valLines.length;li++){
+          yw+=5.5;
+          doc.text(valLines[li],margin+labelW,yw);
+        }
+      }
+      return yw+7;
+    };
+
+    // Helper inline con hipervínculo
+    const flineLink=(label,url,yw)=>{
+      if(!url||url==='')return fline(label,'—',yw);
+      if(y>pageH-20){doc.addPage();pdfHeader(doc,pageW);yw=32;}
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(41,87,57);
+      const labelText=label+': ';
+      const labelW=doc.getTextWidth(labelText);
+      doc.text(labelText,margin,yw);
+      doc.setFont('helvetica','normal');doc.setTextColor(41,87,57);
+      const display=url.length>70?url.substring(0,67)+'…':url;
+      doc.textWithLink(display,margin+labelW,yw,{url:url});
+      doc.setTextColor(28,28,28);
+      return yw+7;
+    };
+
+    section('FICHA DE CATALOGACIÓN');
+    y=fline('Nº Referencia en catálogo', r.activoNuevo||'—', y);
+    y=fline('Autor / Artista', r.autor||'—', y);
+    y=fline('Nombre / Título', r.nombre||'—', y);
+    y=fline('Tipo de bien', r.tipo||'—', y);
+    y=fline('Descripción', r.descripcion||'—', y);
+    y=fline('Material', r.material||'—', y);
+    y=fline('Dimensiones', r.dimensiones||'—', y);
+    y=fline('Fecha de creación', r.anio||'—', y);
+    y=flineLink('Foto (enlace Google Drive)', r.fotoDrive, y);
+    y=fline('Propiedad', r.propiedad||'—', y);
+    y=fline('Localización', r.localizacion||'—', y);
+    y=fline('Ciudad', r.ciudad||'—', y);
+    y=fline('Valor de venta', r.valorVenta?parseFloat(r.valorVenta).toLocaleString('es-ES',{style:'currency',currency:'EUR'}):r.valorVenta||'—', y);
+    y+=3;
+
+    // Resto de campos opcionales (solo si están rellenos)
+    const hayOtros=[r.solicitante,r.estado,r.conservacion,r.fechaAdq,r.poliza,r.epoca,
+      r.tecnica,r.procedencia,r.firma,r.valor,r.valorCompra,r.bic==='Sí'].some(Boolean);
+    if(hayOtros){
+      section('OTROS DATOS');
+      let yL=y,yR=y;
+      yL=field('Solicitante',r.solicitante,margin,yL,colW);
+      yL=field('Estado',r.estado,margin,yL,colW);
+      yL=field('Fecha de adquisición',r.fechaAdq?fmt(r.fechaAdq):'',margin,yL,colW);
+      yL=field('Póliza de seguros',r.poliza,margin,yL,colW);
+      yL=field('Técnica',r.tecnica,margin,yL,colW);
+      yL=field('Procedencia',r.procedencia,margin,yL,colW);
+      yR=field('Conservación',r.conservacion,margin+colW,yR,colW);
+      yR=field('Época / Contexto',r.epoca,margin+colW,yR,colW);
+      yR=field('Posición de la firma',r.firma,margin+colW,yR,colW);
+      if(r.bic==='Sí')yR=field('BIC','Bien de Interés Cultural',margin+colW,yR,colW);
+      y=Math.max(yL,yR)+3;
+    }
+
+    if(r.descripcion||r.procedencia||r.exposiciones){
+      section('DESCRIPCIÓN Y PROCEDENCIA');
+      if(r.descripcion)y=field('Descripción',r.descripcion,margin,y,pageW-margin*2);
+      if(r.procedencia)y=field('Procedencia',r.procedencia,margin,y,pageW-margin*2);
+      if(r.exposiciones)y=field('Exposiciones',r.exposiciones,margin,y,pageW-margin*2);
+    }
+
+    const med=[r.alto&&`Alto: ${r.alto} cm`,r.ancho&&`Ancho: ${r.ancho} cm`,
+      r.prof&&`Prof.: ${r.prof} cm`,r.diam&&`Diámetro: ${r.diam} cm`,r.peso&&`Peso: ${r.peso} g`].filter(Boolean).join('  ·  ');
+    if(med)y=field('Medidas y peso',med,margin,y,pageW-margin*2);
+
+    const docStr=[r.marco==='Sí'&&'Marco',r.restaurado==='Sí'&&'Restaurado',
+      r.certAut==='Sí'&&'Certificado de autenticidad',r.escritura==='Sí'&&'Escritura de adquisición'].filter(Boolean).join('  ·  ');
+    if(docStr)y=field('Documentación acreditada',docStr,margin,y,pageW-margin*2);
+
+    const numF=[r.metal,r.ceca,r.reinado,r.denominacion,r.sheldon].some(Boolean);
+    if(numF){
+      section('NUMISMÁTICA');
+      yL=y;yR=y;
+      yL=field('Metal / Material',r.metal,margin,yL,colW);
+      yL=field('Ceca',r.ceca,margin,yL,colW);
+      yL=field('Reinado / Emisor',r.reinado,margin,yL,colW);
+      yL=field('Denominación',r.denominacion,margin,yL,colW);
+      yR=field('Grado Sheldon',r.sheldon,margin+colW,yR,colW);
+      yR=field('Referencia catálogo',r.catalogo,margin+colW,yR,colW);
+      y=Math.max(yL,yR)+2;
+      if(r.anverso)y=field('Anverso',r.anverso,margin,y,pageW-margin*2);
+      if(r.reverso)y=field('Reverso',r.reverso,pageW-margin*2);
+    }
+
+    if(r.obsEstado||r.observaciones||r.bibliografia){
+      section('OBSERVACIONES Y BIBLIOGRAFÍA');
+      if(r.obsEstado)y=field('Observaciones al estado',r.obsEstado,margin,y,pageW-margin*2);
+      if(r.observaciones)y=field('Observaciones generales',r.observaciones,margin,y,pageW-margin*2);
+      if(r.bibliografia)y=field('Bibliografía',r.bibliografia,margin,y,pageW-margin*2);
+    }
+
+    if(r.images&&r.images.length){
+      section('IMÁGENES');
+      const maxS=40,perRow=4,gap=3;
+      for(let i=0;i<r.images.length;i++){
+        if(y>pageH-50){doc.addPage();pdfHeader(doc,pageW);y=32;}
+        const col=i%perRow;
+        const xImg=margin+col*(maxS+gap);
+        if(col===0&&i>0)y+=maxS+gap+2;
+        try{
+          const img=new Image();img.src=r.images[i].dataUrl;
+          const nW=img.naturalWidth||150,nH=img.naturalHeight||150;
+          let w=maxS,h=maxS;
+          if(nW>nH){h=Math.round(maxS*nH/nW);}else if(nH>nW){w=Math.round(maxS*nW/nH);}
+          doc.addImage(r.images[i].dataUrl,'JPEG',xImg+(maxS-w)/2,y+(maxS-h)/2,w,h);
+        }catch(ex){}
+      }
+      y+=maxS+gap+6;
+    }
+
+    const footerY=pageH-8;
+    doc.setDrawColor(184,134,11);doc.setLineWidth(0.25);doc.line(margin,footerY-4,pageW-margin,footerY-4);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(150,150,150);
+    doc.text(`Ana Serrano · Numismatics & Heritage Advisor SL · ${new Date().toLocaleDateString('es-ES')}`,margin,footerY);
+    doc.text(`${idx+1} / ${recs.length}`,pageW-margin,footerY,{align:'right'});
+  });
+  // ── PÁGINA RESUMEN FINAL (solo si hay más de 1 registro)
+  if(recs.length > 1){
+    doc.addPage();
+    pdfHeader(doc,pageW);
+    let y=32;
+
+    // Título
+    doc.setTextColor(28,28,28);doc.setFont('helvetica','bold');doc.setFontSize(15);
+    doc.text('Resumen de tasación',margin,y);y+=3;
+    doc.setDrawColor(184,134,11);doc.setLineWidth(0.4);doc.line(margin,y+1,pageW-margin,y+1);y+=10;
+
+    // Tabla resumen
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,255,255);
+    doc.setFillColor(26,58,38);
+    doc.rect(margin,y,pageW-margin*2,7,'F');
+    doc.text('Nº',margin+2,y+4.8);
+    doc.text('Nombre',margin+12,y+4.8);
+    doc.text('Tipo',margin+90,y+4.8);
+    doc.text('Valor tasación',pageW-margin-2,y+4.8,{align:'right'});
+    y+=9;
+
+    let total=0;
+    recs.forEach((r,i)=>{
+      if(y>pageH-30){doc.addPage();pdfHeader(doc,pageW);y=32;}
+      const bg=i%2===0?[250,250,248]:[240,244,241];
+      doc.setFillColor(...bg);
+      doc.rect(margin,y,pageW-margin*2,6.5,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(28,28,28);
+      doc.text(String(i+1)+'.',margin+2,y+4.5);
+      const nombre=r.nombre.length>45?r.nombre.substring(0,44)+'…':r.nombre;
+      doc.text(nombre,margin+12,y+4.5);
+      doc.text(r.tipo||'—',margin+90,y+4.5);
+      const val=parseFloat(r.valor)||0;
+      total+=val;
+      doc.setFont('helvetica',val?'bold':'normal');
+      doc.text(val?val.toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}):'—',pageW-margin-2,y+4.5,{align:'right'});
+      y+=6.5;
+    });
+
+    // Línea separadora
+    doc.setDrawColor(184,134,11);doc.setLineWidth(0.5);
+    doc.line(margin,y+1,pageW-margin,y+1);y+=6;
+
+    // TOTAL destacado
+    doc.setFillColor(245,230,178);
+    doc.roundedRect(margin,y,pageW-margin*2,14,2,2,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(122,87,0);
+    doc.text('VALOR TOTAL DE TASACIÓN:',margin+4,y+9);
+    doc.setFontSize(14);
+    doc.text(total.toLocaleString('es-ES',{style:'currency',currency:'EUR'}),pageW-margin-4,y+9,{align:'right'});
+    y+=20;
+
+    // Stats adicionales
+    const conValor=recs.filter(r=>parseFloat(r.valor)>0).length;
+    const sinValor=recs.length-conValor;
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(100,100,100);
+    doc.text(`Total de bienes: ${recs.length}   ·   Con tasación: ${conValor}   ·   Sin tasación: ${sinValor}   ·   Fecha del informe: ${new Date().toLocaleDateString('es-ES')}`,margin,y);
+  }
+
+  doc.save(filename);
+}
+
+// INIT
+updateSetupBanner();
+if(API_URL){
+  updateSyncBar('loading','Cargando datos desde Google Sheets…');
+  syncFromSheets();
+} else {
+  updateSyncBar('offline','Sin conexión a Google Sheets — datos guardados solo en este navegador');
+}
+renderStats();
+renderTable();
+</script>
+</body>
+</html>
